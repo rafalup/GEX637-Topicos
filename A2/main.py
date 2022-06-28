@@ -3,14 +3,7 @@ from time import time
 import pandas as pd
 from statistics import pstdev
 
-# PATH = ["Djibouti", "Qatar", "Uruguay", "Western Sahara", "Zimbabwe"]
-
-# TIME_LIMIT = 60
-# CITY_LIMIT = 1000
-
-
-
-def readInstance(indexPath):
+def Instanciando(indexPath):
     PATH = ["Djibouti", "Qatar", "Uruguay", "Western Sahara", "Zimbabwe"]
     with open("Docs/" + PATH[indexPath] + ".txt", "r") as f:
         lines = f.readlines()
@@ -19,22 +12,12 @@ def readInstance(indexPath):
         lines[i] = lines[i].split()
         for j in range(len(lines[i])):
             lines[i][j] = float(lines[i][j])
-
     return lines
 
 
-# Calcula a regra de 3 para o tempo de execução da instância
-# def instanceTimeLimit(nCities):
-
-#     return TIME_LIMIT * nCities / CITY_LIMIT
-
-
-def opt2(arr, a: int, b: int):
-
+def Work_opt2(arr, a: int, b: int):
     newArr = arr.copy()
-
     while(a < b):
-
         aux = newArr[a]
         newArr[a] = newArr[b]
         newArr[b] = aux
@@ -43,53 +26,37 @@ def opt2(arr, a: int, b: int):
     return newArr
 
 
-def qualityOfSolution(solution, matrizDistancias):
-
-    totalDistance = 0
-    for i in range(len(solution) - 1):
-        totalDistance += matrizDistancias[solution[i]][solution[i+1]]
-
-    totalDistance += matrizDistancias[solution[-1]][solution[0]]
-    return totalDistance
-
-
-# def writeToFile(instancia, autoria, algoritmo, q_medio, q_desvio, t_medio):
-
-#     headers = ["instancia", "autoria", "algoritmo",
-#                "q-medio", "q-desvio", "t-medio"]
-
-#     df = pd.DataFrame({"instancia": instancia, "autoria": autoria,
-#                        "algoritmo": algoritmo, "q-medio": q_medio,
-#                        "q-desvio": q_desvio, "t-medio": t_medio})
-
-#     df.to_csv("./resultados.csv", header=headers, index=False)
-
-
-def BLPM2opt(tInitial, tLimit, matrizDistancias, nCidades,culture):
+def BLPM2opt(temp_Initial, temp_Limit, matrizDistancias, nCidades):
 
     solution = [x for x in range(nCidades)]
     random.shuffle(solution)
 
-    bestQuality = qualityOfSolution(solution, matrizDistancias)
+    first_Quality = 0
+    for i in range(len(solution) - 1):
+        first_Quality += matrizDistancias[solution[i]][solution[i+1]]
 
-    size = len(solution)
-    x = 0
-    while x < size:
-
+    first_Quality += matrizDistancias[solution[-1]][solution[0]]
+    
+    tam = len(solution)
+   
+    for x in range(tam):
+  
         y = x + 1
-        while(y < size) and (time() - tInitial < tLimit):
+        while(y < tam) and (time() - temp_Initial < temp_Limit):
             if x == y:
                 y += 1
                 continue
 
-            newSolution = opt2(solution, x, y)
+            newSolution = Work_opt2(solution, x, y)
 
-            newQuality = qualityOfSolution(newSolution, matrizDistancias)
-            culture.append(newQuality)
+            newQuality = 0
+            for i in range(len(solution) - 1):
+                newQuality += matrizDistancias[solution[i]][solution[i+1]]
+            newQuality += matrizDistancias[solution[-1]][solution[0]]
+            
+            if(newQuality < first_Quality):
 
-            if(newQuality < bestQuality):
-
-                bestQuality = newQuality
+                first_Quality = newQuality
                 solution = newSolution
                 x = 0
                 y = 0
@@ -98,59 +65,46 @@ def BLPM2opt(tInitial, tLimit, matrizDistancias, nCidades,culture):
 
         x += 1
 
-    return bestQuality, tInitial
+    return first_Quality, temp_Initial
 
+def tempo_medio(values_times):
+    hora = 0
+    for up in values_times: 
+        hora += up
 
-#=========================== main principal ================================
+    hora = hora / len(values_times)
+    times.append(round(hora))
+    return times
+    
+
+#================================== MAIN PRINCIPAL ======================================
 PATH = ["Djibouti", "Qatar", "Uruguay", "Western Sahara", "Zimbabwe"]
-averages,deviations ,times = [],[],[]
-culture = []
+media , desvio , times = [] , [] ,[]
 
 for i in range(len(PATH)):
-    print(f"Startin {PATH[i]}")
-    matrizDistancias = readInstance(i)
+   
+    matrizDistancias = Instanciando(i)
     nCidades = len(matrizDistancias)
-    tLimit =(60 * nCidades) / 10000
+    temp_Limit =  60 * nCidades / 1000
 
-    qualities , localTime = []
+    qualities , values_times = [] , []
 
-    avgTime = 0
+    for i in range(10):
+       
+        first_Quality, temp_Initial = BLPM2opt(
+            time(), temp_Limit, matrizDistancias, nCidades)
 
-    for _ in range(10):
+        qualities.append(first_Quality)
+        values_times.append(time() - temp_Initial)
+        
+    media.append(round(sum(qualities) / len(qualities))) 
+    time_final = tempo_medio(values_times) #t_medio
+    
+    desvio.append(round(pstdev(qualities),1))
 
-        bestQuality, tInitial = BLPM2opt(
-            time(), tLimit, matrizDistancias, nCidades,culture)
+headers = ["instancia", "autoria", "algoritmo","q-medio", "q-desvio", "t-medio"]
 
-        qualities.append(bestQuality)
-        localTime.append(time() - tInitial)
-        avgTime += localTime
-
-        print(f"Time elapsed: {time()-tInitial}")
-
-        # media da qualidade
-    averages.append(round(sum(qualities) / len(qualities)))
-    #avgTime = 0
-
-    #for lTime in localTime:  # Media do tempo de execução da instancia
-     #   avgTime += lTime
-
-    avgTime = avgTime / len(localTime)
-    times.append(round(avgTime))
-
-    # variance = 0  # desvio padrao da qualidade
-    # for quality in qualities:
-    #     variance += (quality - averages[-1]) ** 2
-    # variance = variance / len(qualities)
-    # deviations.append(round(variance ** 0.5, 2))
-    deviations.append(round(pstdev(culture),1))
-
-headers = ["instancia", "autoria", "algoritmo",
-               "q-medio", "q-desvio", "t-medio"]
-
-df = pd.DataFrame({"instancia": PATH, "autoria": "Rafinha",
-                       "algoritmo": "BT2opt", "q-medio": averages,
-                       "q-desvio": deviations, "t-medio": times})
-
+df = pd.DataFrame({"instancia": PATH, "autoria": "Rafaelle",
+                       "algoritmo": "BT2opt", "q-medio": media,
+                       "q-desvio": desvio, "t-medio": time_final})
 df.to_csv("./resultados.csv", header=headers, index=False)
-
-  
