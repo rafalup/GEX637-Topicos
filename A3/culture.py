@@ -3,8 +3,8 @@ from time import time
 import pandas as pd
 from statistics import pstdev
 
-def Instanciando(indexPath):
-    PATH = ["Djibouti", "Qatar","Uruguay","Western Sahara","Zimbabwe"]
+def Instancia(indexPath):
+    PATH = ["Djibouti", "Qatar", "Uruguay", "Western Sahara", "Zimbabwe"]
     with open("Docs/" + PATH[indexPath] + ".txt", "r") as f:
         lines = f.readlines()
 
@@ -12,6 +12,7 @@ def Instanciando(indexPath):
         lines[i] = lines[i].split()
         for j in range(len(lines[i])):
             lines[i][j] = float(lines[i][j])
+
     return lines
 
 
@@ -25,6 +26,7 @@ def swap(arr, a, b):
 
     return A
 
+
 def qualityOfSolution(solution, matrizDistancias):
 
     totalDistance = 0
@@ -35,24 +37,28 @@ def qualityOfSolution(solution, matrizDistancias):
     return totalDistance
 
 
-def tabuSearch(tInitial, tLimit, matrizDistancias, nCidades, culture):
-    tabuList = []
-    bestQuality = 0
-    x = 0
+
+def tabuSearch(tInitial, tLimit, matrizDistancias, nCidades):
 
     mandato = nCidades // 5
     mandatoValues = [0 for _ in range(nCidades)]
 
-    pivot = [n for n in range(nCidades)]
+    tabuList = []
+
+    pivot = [x for x in range(nCidades)]
     random.shuffle(pivot)
 
-    
+   # bestQuality = qualityOfSolution(pivot, matrizDistancias)
+    bestQuality = 0
     for i in range(len(pivot) - 1):
-        bestQuality  += matrizDistancias[pivot[i]][pivot[i+1]]
+        bestQuality += matrizDistancias[pivot[i]][pivot[i+1]]
 
-    bestQuality  += matrizDistancias[pivot[-1]][pivot[0]]
-    
+    bestQuality += matrizDistancias[pivot[-1]][pivot[0]]
+  
+
     size = len(pivot)
+
+    x = 0
 
     while (x < size) and (time() - tInitial < tLimit):
 
@@ -64,7 +70,7 @@ def tabuSearch(tInitial, tLimit, matrizDistancias, nCidades, culture):
         nextSolution = -1
         nextToTabu = ()
 
-        y = x + 2  
+        y = x + 2  # Comeca a partir de x + 2, para evitar 2opt com adjacente;
         while (y < size) and (time() - tInitial < tLimit):
 
             if (mandatoValues[pivot[y]] != 0):
@@ -72,7 +78,11 @@ def tabuSearch(tInitial, tLimit, matrizDistancias, nCidades, culture):
                 continue
 
             newSolution = swap(pivot, x, y)
-            newQuality = qualityOfSolution(newSolution, matrizDistancias)
+            #newQuality = qualityOfSolution(newSolution, matrizDistancias)
+            newQuality=0
+            for i in range(len(pivot) - 1):
+               newQuality += matrizDistancias[pivot[i]][pivot[i+1]]
+            newQuality += matrizDistancias[pivot[-1]][pivot[0]]
 
             if (newQuality < nextQuality) or (nextQuality == -1):
                 nextQuality = newQuality
@@ -86,8 +96,7 @@ def tabuSearch(tInitial, tLimit, matrizDistancias, nCidades, culture):
         # Atualiza a melhor qualidade
         if nextQuality < bestQuality:
             bestQuality = nextQuality
-            print(bestQuality)
-           
+
         # Atualiza a lista tabu
         newTabuList = []
         for i in tabuList:
@@ -102,37 +111,47 @@ def tabuSearch(tInitial, tLimit, matrizDistancias, nCidades, culture):
             mandatoValues[tabuList[-1]] = mandato
 
         x = 0
-    culture.append(bestQuality)
 
     return bestQuality, tInitial
 
+def tempo_medio(values_times):
+    hora = 0
+    for up in values_times: 
+        hora += up
 
-# ===================    main principal         ===================
+    hora = hora / len(values_times)
+    times.append(round(hora))
+    return times
+    
+
+#=============================  main principal ==================================
 PATH = ["Djibouti", "Qatar", "Uruguay", "Western Sahara", "Zimbabwe"]
-averages , deviations , culture, times = [], [], [], []
+medio , desvio , times = [] ,[],[] 
 
 for i in range(len(PATH)):
-
-    matrizDistancias = Instanciando(i)
+    matrizDistancias = Instancia(i)
     nCidades = len(matrizDistancias)
-        
-    tLimit = (60 * nCidades) / 1000
-    times.append(round(tLimit))
+    tLimit = 60 * nCidades / 1000
 
-    qualities, localTime = [] , []
+    qualities , localTime = [], []
 
     for _ in range(10):
 
         bestQuality, tInitial = tabuSearch(
-            time(), tLimit, matrizDistancias, nCidades,culture)
+            time(), tLimit, matrizDistancias, nCidades)
 
         qualities.append(bestQuality)
         localTime.append(time() - tInitial)
 
-    averages.append(round(sum(qualities) / len(qualities)))
-    
-    deviations.append(round(pstdev(culture),1))
+      
+    medio.append(round(sum(qualities) / len(qualities)))
+
+    time_final = tempo_medio(values_times) #t_medio
+
+    desvio.append(round(pstdev(qualities),1))
+   
 
 headers = ["instancia", "autoria", "algoritmo","q-medio", "q-desvio", "t-medio"]
-df = pd.DataFrame({"instancia": PATH, "autoria": "Rafaelle", "algoritmo": "BTA", "q-medio": averages,"q-desvio": deviations, "t-medio": times})
-df.to_csv("resultados.csv", header=headers, index=False)
+df = pd.DataFrame({"instancia": PATH, "autoria": "Rafaelle", "algoritmo": "BT2opt", "q-medio": medio,
+                       "q-desvio": desvio, "t-medio": time_final})
+df.to_csv("./resultados.csv", header=headers, index=False)
