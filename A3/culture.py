@@ -30,7 +30,8 @@ def swap(arr, a, b):
 def qualityOfSolution(solution, matrizDistancias):
 
     totalDistance = 0
-    for i in range(len(solution) - 1):
+    #for i in range(len(solution) - 1):
+    while(i < len(solution) -1):
         totalDistance += matrizDistancias[solution[i]][solution[i+1]]
 
     totalDistance += matrizDistancias[solution[-1]][solution[0]]
@@ -68,7 +69,7 @@ def tabuSearch(tInitial, tLimit, matrizDistancias, nCidades):
 
         nextQuality = -1
         nextSolution = -1
-        nextToTabu = ()
+        nextToTabu = []
 
         y = x + 2  # Comeca a partir de x + 2, para evitar 2opt com adjacente;
         while (y < size) and (time() - tInitial < tLimit):
@@ -78,16 +79,17 @@ def tabuSearch(tInitial, tLimit, matrizDistancias, nCidades):
                 continue
 
             newSolution = swap(pivot, x, y)
-            #newQuality = qualityOfSolution(newSolution, matrizDistancias)
-            newQuality=0
-            for i in range(len(pivot) - 1):
-               newQuality += matrizDistancias[pivot[i]][pivot[i+1]]
-            newQuality += matrizDistancias[pivot[-1]][pivot[0]]
+            newQuality = qualityOfSolution(newSolution, matrizDistancias)
+            # newQuality=0
+            # for i in range(len(pivot) - 1):
+            #    newQuality += matrizDistancias[pivot[i]][pivot[i+1]]
+            # newQuality += matrizDistancias[pivot[-1]][pivot[0]]
 
             if (newQuality < nextQuality) or (nextQuality == -1):
                 nextQuality = newQuality
                 nextSolution = newSolution
                 nextToTabu = (pivot[x], pivot[y])
+                print("entrou aqui")
 
             y += 1
 
@@ -132,7 +134,6 @@ for i in range(len(PATH)):
     matrizDistancias = Instancia(i)
     nCidades = len(matrizDistancias)
     tLimit = 60 * nCidades / 1000
-
     qualities , localTime = [], []
 
     for _ in range(10):
@@ -146,10 +147,9 @@ for i in range(len(PATH)):
       
     medio.append(round(sum(qualities) / len(qualities)))
 
-    time_final = tempo_medio(values_times) #t_medio
+    time_final = tempo_medio(localTime) #t_medio
 
     desvio.append(round(pstdev(qualities),1))
-   
 
 headers = ["instancia", "autoria", "algoritmo","q-medio", "q-desvio", "t-medio"]
 df = pd.DataFrame({"instancia": PATH, "autoria": "Rafaelle", "algoritmo": "BT2opt", "q-medio": medio,
